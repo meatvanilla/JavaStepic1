@@ -1,29 +1,37 @@
 package main;
 
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
-import servlets.AllRequestsServlet;
+import servlets.SignInServlet;
+import servlets.SignUpServlet;
+import accs.AccountService;
 
-/**
- * @author v.chibrikov
- *         <p>
- *         Пример кода для курса на https://stepic.org/
- *         <p>
- *         Описание курса и лицензия: https://github.com/vitaly-chibrikov/stepic_java_webserver
- */
 public class Main {
+
     public static void main(String[] args) throws Exception {
-        AllRequestsServlet allRequestsServlet = new AllRequestsServlet();
-
-        ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
-        context.addServlet(new ServletHolder(allRequestsServlet), "/mirror");
-
         Server server = new Server(8080);
-        server.setHandler(context);
+
+        ServletHandler handler = new ServletHandler();
+        server.setHandler(handler);
+
+        AccountService accountService = new AccountService();
+
+        // Создание экземпляров сервлетов с передачей экземпляра AccountService в конструктор
+        SignUpServlet signUpServlet = new SignUpServlet(accountService);
+        SignInServlet signInServlet = new SignInServlet(accountService);
+
+        // Создание ServletHolder для каждого сервлета
+        ServletHolder signUpServletHolder = new ServletHolder(signUpServlet);
+        ServletHolder signInServletHolder = new ServletHolder(signInServlet);
+
+        // Добавление сервлетов с маппингами с использованием метода addServletWithMapping()
+        handler.addServletWithMapping(signUpServletHolder, "/signup");
+        handler.addServletWithMapping(signInServletHolder, "/signin");
 
         server.start();
         System.out.println("Server started");
         server.join();
     }
+
 }
