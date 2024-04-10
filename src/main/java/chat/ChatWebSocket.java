@@ -1,29 +1,49 @@
 package chat;
 
-import org.eclipse.jetty.websocket.servlet.WebSocketServlet;
-import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
-
-import javax.servlet.annotation.WebServlet;
+import org.eclipse.jetty.websocket.api.Session;
+import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
+import org.eclipse.jetty.websocket.api.annotations.OnWebSocketConnect;
+import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
+import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 
 /**
  * @author v.chibrikov
- *         <p>
+ *         <p/>
  *         Пример кода для курса на https://stepic.org/
- *         <p>
+ *         <p/>
  *         Описание курса и лицензия: https://github.com/vitaly-chibrikov/stepic_java_webserver
  */
-@WebServlet(name = "WebSocketChatServlet", urlPatterns = {"/chat"})
-public class WebSocketChatServlet extends WebSocketServlet {
-    private final static int LOGOUT_TIME = 10 * 60 * 1000;
-    private final ChatService chatService;
+@SuppressWarnings("UnusedDeclaration")
+@WebSocket
+public class ChatWebSocket {
+    private ChatService chatService;
+    private Session session;
 
-    public WebSocketChatServlet() {
-        this.chatService = new ChatService();
+    public ChatWebSocket(ChatService chatService) {
+        this.chatService = chatService;
     }
 
-    @Override
-    public void configure(WebSocketServletFactory factory) {
-        factory.getPolicy().setIdleTimeout(LOGOUT_TIME);
-        factory.setCreator((req, resp) -> new ChatWebSocket(chatService));
+    @OnWebSocketConnect
+    public void onOpen(Session session) {
+        chatService.add(this);
+        this.session = session;
+    }
+
+    @OnWebSocketMessage
+    public void onMessage(String data) {
+        chatService.sendMessage(data);
+    }
+
+    @OnWebSocketClose
+    public void onClose(int statusCode, String reason) {
+        chatService.remove(this);
+    }
+
+    public void sendString(String data) {
+        try {
+            session.getRemote().sendString(data);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
     }
 }
