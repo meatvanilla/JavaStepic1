@@ -1,37 +1,29 @@
 package main;
 
+import chat.WebSocketChatServlet;
+import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.servlet.ServletHandler;
+import org.eclipse.jetty.server.handler.HandlerList;
+import org.eclipse.jetty.server.handler.ResourceHandler;
+import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
-import servlets.SignInServlet;
-import servlets.SignUpServlet;
-import accs.AccountService;
 
 public class Main {
-
     public static void main(String[] args) throws Exception {
         Server server = new Server(8080);
+        ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
 
-        ServletHandler handler = new ServletHandler();
-        server.setHandler(handler);
+        context.addServlet(new ServletHolder(new WebSocketChatServlet()), "/chat");
 
-        AccountService accountService = new AccountService();
+        ResourceHandler resource_handler = new ResourceHandler();
+        resource_handler.setDirectoriesListed(true);
+        resource_handler.setResourceBase("public_html");
 
-        // Создание экземпляров сервлетов с передачей экземпляра AccountService в конструктор
-        SignUpServlet signUpServlet = new SignUpServlet(accountService);
-        SignInServlet signInServlet = new SignInServlet(accountService);
-
-        // Создание ServletHolder для каждого сервлета
-        ServletHolder signUpServletHolder = new ServletHolder(signUpServlet);
-        ServletHolder signInServletHolder = new ServletHolder(signInServlet);
-
-        // Добавление сервлетов с маппингами с использованием метода addServletWithMapping()
-        handler.addServletWithMapping(signUpServletHolder, "/signup");
-        handler.addServletWithMapping(signInServletHolder, "/signin");
+        HandlerList handlers = new HandlerList();
+        handlers.setHandlers(new Handler[]{resource_handler, context});
+        server.setHandler(handlers);
 
         server.start();
-        System.out.println("Server started");
         server.join();
     }
-
 }
