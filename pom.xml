@@ -40,7 +40,7 @@
                             </descriptorRefs>
                             <archive>
                                 <manifest>
-                                    <mainClass>example.Main</mainClass>
+                                    <mainClass>main.Main</mainClass>
                                 </manifest>
                             </archive>
                         </configuration>
